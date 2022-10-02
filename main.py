@@ -3,6 +3,7 @@ from pip._vendor import requests
 from dateutil import tz
 import datetime
 import json
+import matplotlib.pyplot as plot
 #import pandas as pd
 # This is a sample Python script.
 
@@ -94,7 +95,8 @@ def chargeSegment(latitude, longitude, date):
     #Put these values in a dictionary
     timeEnergyPair = myDictionary()
     for i in range(0, len(timeList)):
-        timeEnergyPair.add(timeList[i], irradianceList[i])
+        #timeEnergyPair.add(timeList[i], irradianceList[i])
+        timeEnergyPair.add(timeList[i], energyPercentage[i])
 
     pprint.pprint(timeEnergyPair)
     #return timeEnergyPair
@@ -106,27 +108,40 @@ chargeSegment(38.927142183, -95.676805255, [])
 def generateGraphData(segments, start, end, energyData):
     
     # loop through each segment
+    #separate the data for each segment
+    #get into graph, example shown below:
+
+    Country = ['USA','Canada','Germany','UK','France']
+    GDP_Per_Capita = [45000,42000,52000,49000,47000]
+
+    New_Colors = ['green','blue','purple','brown','teal']
+    plot.bar(Country, GDP_Per_Capita, color=New_Colors)
+    plot.title('Country Vs GDP Per Capita', fontsize=14)
+    plot.xlabel('Country', fontsize=14)
+    plot.ylabel('GDP Per Capita', fontsize=14)
+    plot.grid(True)
+    plot.show()
     
 '''
 
 
-
-
+#Asking for latitude and longitude
 #testLatitude = 38.927142183
 #testLongitude = -95.676805255
-# Asking for latitude and longitude
-
-#latitude = float(input("Enter latitude of location: "))
-#longitude = float(input("Enter longitude of location: "))
-#numOfSegments = input(int("Enter the number of segments of charge"))
-#segmentArray = []
-#for i in range(0, numOfSegments):
-#    segmentArray.append(i + 1)
-#startTime = []
-#endTime = []
-#for i in range(0, numOfSegments):
-#    startTime[i] = input("Enter start time -> format example: xxxx-xx-xx xx:xx or 2022-09-29 08:00:")
-#    endTime[i] = input("Enter end time -> format example: xxxx-xx-xx xx:xx or 2022-09-29 08:30:")
 
 
-#generateGraphData(numOfSegments, startTime, endTime, energyPercentDict)
+latitude = float(input("Enter latitude of location: "))
+longitude = float(input("Enter longitude of location: "))
+numOfSegments = input(int("Enter the number of segments of charge"))
+segmentArray = []
+for i in range(0, numOfSegments):
+    segmentArray.append(i + 1) 
+startTime = []
+endTime = []
+for i in range(0, numOfSegments):
+    startTime[i] = input("Enter start time -> format example: xxxx-xx-xx xx:xx or 2022-09-29 08:00:")
+    endTime[i] = input("Enter end time -> format example: xxxx-xx-xx xx:xx or 2022-09-29 08:30:")
+
+
+generateGraphData(numOfSegments, startTime, endTime, energyPercentDict)
+
