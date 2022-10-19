@@ -4,6 +4,7 @@ from dateutil import tz
 import datetime
 import json
 import matplotlib.pyplot as plot
+import matplotlib.colors as mcolors
 import pytz
 
 
@@ -48,7 +49,7 @@ def chargeSegment(latitude, longitude, date):
         "api_key": soulcastAPI,
         "Latitude": latitude,
         "Longitude": longitude,
-        "hours": 48
+        "hours": 48 #limiting solcast to feed data for next 48 hours
     }
     apiCall = requests.get("https://api.solcast.com.au/world_radiation/forecasts", params=query).json()
     #pprint.pprint(apiCall)
@@ -139,8 +140,10 @@ def generateGraphData(numOfSegments, start, end, energyData):
             chargeIncrease += float(energyData.get(timeList[j]))
         timePeriod.append(startTarget + "-" + endTarget)
         totalExpectedCharge.append(chargeIncrease)
-        colors.append('blue')
-
+        #colors.append('blue')
+    cmap = plot.cm.get_cmap('RdYlGn')
+    norm = mcolors.Normalize(min(totalExpectedCharge), max(totalExpectedCharge))
+    colors = [cmap(norm(val)) for val in totalExpectedCharge]
     plot.bar(timePeriod, totalExpectedCharge, color = colors)
     plot.title('Total Expected SOC increase over time periods', fontsize=12)
     plot.xlabel('Time Segments', fontsize=12)
