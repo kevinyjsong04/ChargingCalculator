@@ -4,6 +4,8 @@ from dateutil import tz
 import datetime
 import json
 import matplotlib.pyplot as plot
+import matplotlib.colors as mcolors
+import pytz
 
 
 # import pandas as pd
@@ -47,7 +49,7 @@ def chargeSegment(latitude, longitude, date):
         "api_key": soulcastAPI,
         "Latitude": latitude,
         "Longitude": longitude,
-        "hours": 168
+        "hours": 48 #limiting solcast to feed data for next 48 hours
     }
     apiCall = requests.get("https://api.solcast.com.au/world_radiation/forecasts", params=query).json()
     #pprint.pprint(apiCall)
@@ -59,20 +61,18 @@ def chargeSegment(latitude, longitude, date):
     # for ghi in apiCall["forecasts"]:
     #    irradianceList.append(ghi["ghi"])
 
-    # This adds
 
+    '''take datetime and use to get the date - timing[:11]  and get the 12-20th indexes of timing or the time in hr:min:sec and -6'''
     for data in apiCall["forecasts"]:
         timing = data["period_end"]
-
+        #print(timing)
         originalZone = tz.gettz("UTC")  # Original timezone in UTC
         newTimeZone = tz.gettz("America/Chicago")
         timing = timing[:18:] + timing[-1]
         utc = datetime.datetime.strptime(timing, "%Y-%m-%dT%H:%M:%SZ")
         utc.replace(tzinfo=originalZone)
-#json_data = {'time': "2021-10-08T08:17:42Z"} 
-#utc = datetime.datetime.strptime(json_data['time'], "%Y-%m-%dT%H:%M:%SZ")
         cst = utc.astimezone(tz=newTimeZone)
-        print(str(utc) + "|||||" + str(cst))
+        #print(str(utc) + "|||||" + str(cst))
         cst = str(cst)
         utc = str(utc)
         timeList.append(cst[:16])  # '''
@@ -84,7 +84,7 @@ def chargeSegment(latitude, longitude, date):
     # As of right now, we are using SR3 values
     solarEfficiency = 0.80  # Value given from Bailey for SR3
     arrayArea = 4;  # in m^2 for SR3
-    time = 0.5
+    time = 0.5 #in hours
 
     # Makes the list of energy values in Wh
     energyList = []
@@ -106,49 +106,70 @@ def chargeSegment(latitude, longitude, date):
         timeEnergyPair.add(timeList[i], energyPercentage[i])
 
     #pprint.pprint(timeEnergyPair)
-    # return timeEnergyPair
+    return timeEnergyPair
 
 
-chargeSegment(38.927142183, -95.676805255, [])  # Kansas
-# chargeSegment(33.7490, -84.3880,[]) # Atlanta
 
-'''
-def generateGraphData(segments, start, end, energyData):
+
+
+def generateGraphData(numOfSegments, start, end, energyData):
 
     # loop through each segment
     #separate the data for each segment
     #get into graph, example shown below:
 
-    Country = ['USA','Canada','Germany','UK','France']
-    GDP_Per_Capita = [45000,42000,52000,49000,47000]
+    #x-Coordinate
+    timePeriod = []
+    #y-Coordinate -> in percentage
+    totalExpectedCharge = []
+    #color
+    colors = []
+    
+    #could optimize this by splitting chargeSegment into smaller functions
+    #get al the times
+    timeList = list(energyData.keys())
 
-    New_Colors = ['green','blue','purple','brown','teal']
-    plot.bar(Country, GDP_Per_Capita, color=New_Colors)
-    plot.title('Country Vs GDP Per Capita', fontsize=14)
-    plot.xlabel('Country', fontsize=14)
-    plot.ylabel('GDP Per Capita', fontsize=14)
+    for i in range(0, numOfSegments):
+        chargeIncrease = 0.0
+        startTarget = start[i]
+        endTarget = end[i]
+        startIndex = list(energyData).index(startTarget)
+        endIndex = list(energyData).index(endTarget)
+        #we want the values at the end times, so ignore the first index
+        for j in range(startIndex + 1, endIndex):
+            chargeIncrease += float(energyData.get(timeList[j]))
+        timePeriod.append(startTarget + "-" + endTarget)
+        totalExpectedCharge.append(chargeIncrease)
+        #colors.append('blue')
+    cmap = plot.cm.get_cmap('RdYlGn')
+    norm = mcolors.Normalize(min(totalExpectedCharge), max(totalExpectedCharge))
+    colors = [cmap(norm(val)) for val in totalExpectedCharge]
+    plot.bar(timePeriod, totalExpectedCharge, color = colors)
+    plot.title('Total Expected SOC increase over time periods', fontsize=12)
+    plot.xlabel('Time Segments', fontsize=12)
+    plot.ylabel('Expected SOC increase in %', fontsize=12)
     plot.grid(True)
     plot.show()
 
-'''
+
 
 # Asking for latitude and longitude
 # testLatitude = 38.927142183
 # testLongitude = -95.676805255
 
 
-# latitude = float(input("Enter latitude of location: "))
-# longitude = float(input("Enter longitude of location: "))
-# numOfSegments = input(int("Enter the number of segments of charge"))
-'''segmentArray = []
-for i in range(0, numOfSegments):
-    segmentArray.append(i + 1) 
+latitude = float(input("Enter latitude of location: "))
+longitude = float(input("Enter longitude of location: "))
+energyPercentDict = chargeSegment(latitude, longitude, [])  # Kansas
+# chargeSegment(33.7490, -84.3880,[]) # Atlanta
+
+numOfSegments = int(input("Enter the number of segments of charge: "))
+ 
 startTime = []
 endTime = []
 for i in range(0, numOfSegments):
-    startTime[i] = input("Enter start time -> format example: xxxx-xx-xx xx:xx or 2022-09-29 08:00:")
-    endTime[i] = input("Enter end time -> format example: xxxx-xx-xx xx:xx or 2022-09-29 08:30:")
-
+    startTime.append(str(input("Enter start time -> format example: xxxx-xx-xx xx:xx or 2022-09-29 08:00 -> ")))
+    endTime.append(str(input("Enter end time(Make sure this is after the start time) -> format example: xxxx-xx-xx xx:xx or 2022-09-29 08:30 -> ")))
 
 generateGraphData(numOfSegments, startTime, endTime, energyPercentDict)
-'''
+
