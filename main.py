@@ -49,7 +49,7 @@ def chargeSegment(latitude, longitude, date):
         "api_key": soulcastAPI,
         "Latitude": latitude,
         "Longitude": longitude,
-        "hours": 48 #limiting solcast to feed data for next 48 hours
+        "hours": 24 #limiting solcast to feed data for next 48 hours
     }
     apiCall = requests.get("https://api.solcast.com.au/world_radiation/forecasts", params=query).json()
     #pprint.pprint(apiCall)
@@ -64,6 +64,7 @@ def chargeSegment(latitude, longitude, date):
 
     '''take datetime and use to get the date - timing[:11]  and get the 12-20th indexes of timing or the time in hr:min:sec and -6'''
     for data in apiCall["forecasts"]:
+        
         timing = data["period_end"]
         #print(timing)
         originalZone = tz.gettz("UTC")  # Original timezone in UTC
@@ -75,21 +76,22 @@ def chargeSegment(latitude, longitude, date):
         #print(str(utc) + "|||||" + str(cst))
         cst = str(cst)
         utc = str(utc)
-        timeList.append(cst[:16])  # '''
+        timeList.append(cst[:16])  # 
         irradianceList.append(data["ghi"])
 
     # print(irradianceList)
     # print(timeList)
 
-    # As of right now, we are using SR3 values
-    solarEfficiency = 0.80  # Value given from Bailey for SR3
-    arrayArea = 4;  # in m^2 for SR3
+    # As of right now, we are using SR4 values
+    solarEfficiency = 0.24  # solar effiecncy for SR4
+    randomConstant = 0.88 #unknown variable
+    arrayArea = 4.99;  # in m^2 for SR4
     time = 0.5 #in hours
 
     # Makes the list of energy values in Wh
     energyList = []
     for i in range(0, len(irradianceList)):
-        energy = irradianceList[i] * arrayArea * solarEfficiency * time
+        energy = irradianceList[i] * arrayArea * solarEfficiency * randomConstant * time
         energyList.append(energy)
 
     # Makes a list of energy percentage values
@@ -109,9 +111,6 @@ def chargeSegment(latitude, longitude, date):
     return timeEnergyPair
 
 
-
-
-
 def generateGraphData(numOfSegments, start, end, energyData):
 
     # loop through each segment
@@ -129,6 +128,9 @@ def generateGraphData(numOfSegments, start, end, energyData):
     #get al the times
     timeList = list(energyData.keys())
 
+    # For labels
+    timeLabels = []
+    
     for i in range(0, numOfSegments):
         chargeIncrease = 0.0
         startTarget = start[i]
@@ -140,11 +142,14 @@ def generateGraphData(numOfSegments, start, end, energyData):
             chargeIncrease += float(energyData.get(timeList[j]))
         timePeriod.append(startTarget + "-" + endTarget)
         totalExpectedCharge.append(chargeIncrease)
-        #colors.append('blue')
+        timeString = timePeriod[i]
+        timeLabels.append(timeString[5:16])
+    for index, value in enumerate(totalExpectedCharge):
+        plot.text(index, value, str(value))
     cmap = plot.cm.get_cmap('RdYlGn')
     norm = mcolors.Normalize(min(totalExpectedCharge), max(totalExpectedCharge))
     colors = [cmap(norm(val)) for val in totalExpectedCharge]
-    plot.bar(timePeriod, totalExpectedCharge, color = colors)
+    plot.bar(timeLabels, totalExpectedCharge, color = colors)
     plot.title('Total Expected SOC increase over time periods', fontsize=12)
     plot.xlabel('Time Segments', fontsize=12)
     plot.ylabel('Expected SOC increase in %', fontsize=12)
