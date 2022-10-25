@@ -49,7 +49,7 @@ def chargeSegment(latitude, longitude, date):
         "api_key": soulcastAPI,
         "Latitude": latitude,
         "Longitude": longitude,
-        "hours": 24 #limiting solcast to feed data for next 48 hours
+        "hours": 48 #limiting solcast to feed data for next 48 hours
     }
     apiCall = requests.get("https://api.solcast.com.au/world_radiation/forecasts", params=query).json()
     #pprint.pprint(apiCall)
@@ -68,12 +68,12 @@ def chargeSegment(latitude, longitude, date):
         timing = data["period_end"]
         #print(timing)
         originalZone = tz.gettz("UTC")  # Original timezone in UTC
-        newTimeZone = tz.gettz("America/Chicago")
+        newTimeZone = tz.gettz("America/Denver") #probably have to switch timezone depending on daylight savings
         timing = timing[:18:] + timing[-1]
         utc = datetime.datetime.strptime(timing, "%Y-%m-%dT%H:%M:%SZ")
-        utc.replace(tzinfo=originalZone)
-        cst = utc.astimezone(tz=newTimeZone)
-        #print(str(utc) + "|||||" + str(cst))
+        newUtc = utc.replace(tzinfo=originalZone)
+        cst = newUtc.astimezone(tz=newTimeZone)
+        #print(str(utc) + "|||||" + str(cst)) #for comparing utc time to desired time
         cst = str(cst)
         utc = str(utc)
         timeList.append(cst[:16])  # 
@@ -143,7 +143,7 @@ def generateGraphData(numOfSegments, start, end, energyData):
         timePeriod.append(startTarget + "-" + endTarget)
         totalExpectedCharge.append(chargeIncrease)
         timeString = timePeriod[i]
-        timeLabels.append(timeString[5:16])
+        timeLabels.append(timeString[5:16] + "-" + timeString[28:33])
     for index, value in enumerate(totalExpectedCharge):
         plot.text(index, value, str(value))
     cmap = plot.cm.get_cmap('RdYlGn')
@@ -161,6 +161,7 @@ def generateGraphData(numOfSegments, start, end, energyData):
 # Asking for latitude and longitude
 # testLatitude = 38.927142183
 # testLongitude = -95.676805255
+# testing time = 2022-10-26 09:00
 
 
 latitude = float(input("Enter latitude of location: "))
