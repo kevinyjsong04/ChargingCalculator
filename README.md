@@ -1,4 +1,12 @@
-### Hi there 👋
+### Hi there! This project is work done for the Georgia Tech Solar Racing Team.
+
+## This project uses Solcast API which returns API calls as a JSON. (API key is provided, but may be discontinued)
+## This application takes in dates in a certain format and uses predicted weather GHI (parsed from JSON call response)
+## Predicted GHI values predict expected percentage power increases (of the GT SR-3 Car) up to 2 days ahead
+
+## Bonus feature is the expected charge increases is output as a graph which shows which hour periods show the highest increase in power percentage
+
+## Note: As of 2022-2023, the Georgia Tech Solar Racing Team has switched from a Single Occupant Vehicle to a Multiple Occupant Vehicle design(SR-4)
 
 <!--
 **kevinyjsong04/kevinyjsong04** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
